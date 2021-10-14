@@ -40,18 +40,18 @@ namespace HostelAPI.Core.Repository.Implementation
             AppUser RegUserModel = UserMapping.GetUser(regRequest);
             var result = await _UserManager.CreateAsync(RegUserModel, regRequest.Password);
 
-          
+
 
             if (result.Succeeded)
             {
-              //  await _UserManager.AddToRoleAsync(RegUserModel, "Customer");
+                //  await _UserManager.AddToRoleAsync(RegUserModel, "Customer");
                 var emailToken = await _UserManager.GenerateEmailConfirmationTokenAsync(RegUserModel);
                 var encodedEmailToken = Encoding.UTF8.GetBytes(emailToken);
                 var validEmailToken = WebEncoders.Base64UrlEncode(encodedEmailToken);
 
 
 
-                string url = $"{_configuration["AppUrl"]}api/v1/Auth/confirmemail?email={RegUserModel.Email}&token={validEmailToken}";
+                string url = $"{_configuration["AppUrl"]}/confirmemail?id={RegUserModel.Id}&token={validEmailToken}";
                 var mailDto = new MailRequest
                 {
                     ToEmail = RegUserModel.Email,
@@ -81,6 +81,15 @@ namespace HostelAPI.Core.Repository.Implementation
             {
                 if (await _UserManager.CheckPasswordAsync(AUserModel, userRequest.Password))
                 {
+                    var mailDto = new MailRequest
+                    {
+                        ToEmail = AUserModel.Email,
+                        Subject = "You are Logged in ",
+                        Body = $"<h1>Welcome to Dominion Koncept</h1>\n<p>Welcome {AUserModel.Email}, thanks for service </p>",
+                        Attachments = null
+                    };
+
+                    await _mailservice.SendEmailAsync(mailDto);
                     var response = UserMapping.GetUserResponse(AUserModel);
                     response.Token = await _TokenGenerator.GenerateToken(AUserModel);
                     return response;
@@ -88,6 +97,34 @@ namespace HostelAPI.Core.Repository.Implementation
                 throw new AccessViolationException("Invalid Credentials");
             }
 
+            throw new AccessViolationException("Invalid Credentials");
+        }
+
+
+
+        public async Task<UserConfirmEmailDTO> ConfirmEmail(string UserId, string token)
+        {
+            if (string.IsNullOrWhiteSpace(UserId) || string.IsNullOrWhiteSpace(token))
+                throw new AccessViolationException("incorrect input");
+
+            AppUser user = await _UserManager.FindByIdAsync(UserId);
+            if (user != null)
+            {
+                var DecodedToken = WebEncoders.Base64UrlDecode(token);
+                string NormalTokenForEmail = Encoding.UTF8.GetString(DecodedToken);
+                var CheckIfEmailIsValid = await _UserManager.ConfirmEmailAsync(user, NormalTokenForEmail);
+
+                if (CheckIfEmailIsValid.Succeeded)
+                {
+                    return   new UserConfirmEmailDTO()
+                    {
+                        Message = "Email Confirm Succesfully",
+                        IsSuccess = true
+                    };
+                    
+                }
+                
+            }
             throw new AccessViolationException("Invalid Credentials");
         }
     }

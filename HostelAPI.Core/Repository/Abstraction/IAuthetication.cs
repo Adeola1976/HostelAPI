@@ -15,5 +15,7 @@ namespace HostelAPI.Core.Repository.Abstraction
         Task<UserResponse> Register(RegRequest regRequest);
 
         Task<UserResponse> Login(UserRequest userRequest);
+
+        Task<UserConfirmEmailDTO> ConfirmEmail(string UserId, string token);
     }
 }

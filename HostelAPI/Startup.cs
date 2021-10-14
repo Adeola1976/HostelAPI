@@ -88,7 +88,11 @@ namespace HostelAPI
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "HostelAPI v1"));
             }
 
+            app.UseStaticFiles();
+
+
             app.UseRouting();
+
 
             app.UseAuthentication();
 
