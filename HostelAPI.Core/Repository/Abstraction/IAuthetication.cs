@@ -10,12 +10,20 @@ using System.Threading.Tasks;
 
 namespace HostelAPI.Core.Repository.Abstraction
 {
-   public interface IAuthetication
+    public interface IAuthetication
     {
         Task<UserResponse> Register(RegRequest regRequest);
 
         Task<UserResponse> Login(UserRequest userRequest);
 
-        Task<UserConfirmEmailDTO> ConfirmEmail(string UserId, string token);
+        Task<UserResponse> ConfirmEmail(string UserId, string token);
+
+        Task<UserConfirmEmailDTO> ForgetPassword(string Id);
+
+        Task<ResetPasswordResponseDto> ResetPassword(ResetPasswordUserRequest userRequest);
+
+        Task<ResetPasswordResponseDto> ResponseForResetPassword(string Email, string token);
+
     }
+        
 }

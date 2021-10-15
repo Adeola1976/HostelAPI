@@ -18,7 +18,7 @@ namespace HostelAPI.Controllers.Auth
         private readonly IAuthetication _Authetication;
 
         private readonly IConfiguration _Configuration;
-        public AuthController(IAuthetication Auth,IConfiguration configuration)
+        public AuthController(IAuthetication Auth, IConfiguration configuration)
         {
             _Authetication = Auth;
             _Configuration = configuration;
@@ -57,29 +57,97 @@ namespace HostelAPI.Controllers.Auth
             {
                 return BadRequest();
             }
-            catch (Exception)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError);
-            }
 
         }
-
-
 
 
 
         [HttpGet("confirmemail")]
 
-        public async Task<IActionResult> ConfirmEmail (string Id,string token)
+        public async Task<IActionResult> ConfirmEmail(string Id, string token)
         {
-           
+
+
+            try
+
+            {
                 var result = await _Authetication.ConfirmEmail(Id, token);
-                if (result.IsSuccess == true)
-                return Redirect($"{_Configuration["AppUrl"]}/index.html");          
-            
-                else 
-                return BadRequest("user not found");
+                return Created("", result);
             }
-       
+
+
+            catch (MissingFieldException Mes)
+            {
+                return BadRequest(Mes.Message);
+            }
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError);
+            }
+
+
+        }
+
+
+        [HttpPost("forgetpassword")]
+        public async Task<IActionResult> ForgetPassword(string Email)
+        {
+
+
+            try
+            {
+                var result = await _Authetication.ForgetPassword(Email);
+
+                return Ok(result);
+
+            }
+            catch (AccessViolationException)
+            {
+                return BadRequest();
+            }
+        }
+
+
+
+        [HttpGet("reset-password")]
+
+        public async Task<IActionResult> ResetPassword(string Email, string token)
+        {
+            try
+            {
+                var result = await _Authetication.ResponseForResetPassword(Email, token);
+
+                return Ok(result);
+
+            }
+            catch (AccessViolationException)
+            {
+                return BadRequest();
+            }
+
+        }
+
+            [HttpPost("resetpassword")]
+
+        public async Task<IActionResult> ForgetPassword([FromForm]ResetPasswordUserRequest userRequest)
+        {
+            try
+
+            {
+                var result = await _Authetication.ResetPassword(userRequest);
+                return Created("", result);
+            }
+
+
+            catch (MissingFieldException Mes)
+            {
+                return BadRequest(Mes.Message);
+            }
+            catch (Exception)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError);
+            }
         }
     }
+}
+

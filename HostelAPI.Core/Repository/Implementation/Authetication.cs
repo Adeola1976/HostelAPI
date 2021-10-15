@@ -102,7 +102,7 @@ namespace HostelAPI.Core.Repository.Implementation
 
 
 
-        public async Task<UserConfirmEmailDTO> ConfirmEmail(string UserId, string token)
+        public async Task<UserResponse> ConfirmEmail(string UserId, string token)
         {
             if (string.IsNullOrWhiteSpace(UserId) || string.IsNullOrWhiteSpace(token))
                 throw new AccessViolationException("incorrect input");
@@ -114,18 +114,110 @@ namespace HostelAPI.Core.Repository.Implementation
                 string NormalTokenForEmail = Encoding.UTF8.GetString(DecodedToken);
                 var CheckIfEmailIsValid = await _UserManager.ConfirmEmailAsync(user, NormalTokenForEmail);
 
+
+
+
                 if (CheckIfEmailIsValid.Succeeded)
                 {
-                    return   new UserConfirmEmailDTO()
-                    {
-                        Message = "Email Confirm Succesfully",
-                        IsSuccess = true
-                    };
-                    
+                    var response = UserMapping.GetUserResponse(user);
+                    response.Token = token;
+                    return response;
+
                 }
-                
+
             }
             throw new AccessViolationException("Invalid Credentials");
         }
+
+        public async Task<UserConfirmEmailDTO> ForgetPassword(string Email)
+        {
+
+            if (string.IsNullOrWhiteSpace(Email))
+                throw new AccessViolationException("incorrect input");
+
+
+            AppUser AUserModel = await _UserManager.FindByEmailAsync(Email);
+
+            if (AUserModel != null)
+            {
+                var passwordToken = await _UserManager.GeneratePasswordResetTokenAsync(AUserModel);
+                var encodedPasswordToken = Encoding.UTF8.GetBytes(passwordToken);
+                var validPasswordToken = WebEncoders.Base64UrlEncode(encodedPasswordToken);
+                string url = $"{_configuration["AppUrl"]}/reset-password?Email={Email}&token={validPasswordToken}";
+                var mailDto = new MailRequest
+                {
+                    ToEmail = AUserModel.Email,
+                    Subject = "Forget Password",
+                    Body = $"<h1>Welcome to Dominion Koncept</h1>\n<p>reset your password <a href='{url}'>click here</a></p>",
+                    Attachments = null
+                };
+
+                await _mailservice.SendEmailAsync(mailDto);
+                return new UserConfirmEmailDTO()
+                {
+                    Message = "mail being sent for confirmation",
+                    IsSuccess = true
+                };
+            }
+
+
+            throw new AccessViolationException("Invalid Credentials");
+
+        }
+
+        public async Task<ResetPasswordResponseDto> ResetPassword(ResetPasswordUserRequest userRequest)
+        {
+            string errors = String.Empty;
+
+            if (string.IsNullOrWhiteSpace(userRequest.Email) || string.IsNullOrWhiteSpace(userRequest.Token) || userRequest.ComfirmPassword != userRequest.Password)
+                throw new AccessViolationException("incorrect input");
+
+            AppUser user = await _UserManager.FindByEmailAsync(userRequest.Email);
+            if (user != null)
+            {
+                var DecodedToken = WebEncoders.Base64UrlDecode(userRequest.Token);
+                string NormalTokenForEmail = Encoding.UTF8.GetString(DecodedToken);
+
+                var result = await _UserManager.ResetPasswordAsync(user, NormalTokenForEmail, userRequest.Password);
+
+                if (result.Succeeded)
+                {
+                    return new ResetPasswordResponseDto()
+                    {
+                        Message = "Password Changed Successfully",
+                        IsSuccess = true
+                    };
+                }
+
+                foreach (var error in result.Errors)
+                {
+                    errors += error.Description + Environment.NewLine;
+                }
+            }
+            throw new MissingFieldException(errors);
+        }
+
+
+        public async Task<ResetPasswordResponseDto> ResponseForResetPassword(string Email, string token)
+        {
+            if (string.IsNullOrWhiteSpace(Email) || string.IsNullOrWhiteSpace(token))
+                throw new AccessViolationException("incorrect input");
+
+            AppUser user = await _UserManager.FindByEmailAsync(Email);
+            if (user != null)
+            {
+               return  new ResetPasswordResponseDto()
+                {
+                    Token = token,
+                    Email = Email,
+                    IsSuccess = true,
+                    Message = "Response being sent"
+                };
+            }
+
+            throw new AccessViolationException("Invalid Credentials");
+
+        }
     }
+
 }
