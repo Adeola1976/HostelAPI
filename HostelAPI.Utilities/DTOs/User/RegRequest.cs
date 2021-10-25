@@ -15,11 +15,6 @@ namespace HostelAPI.Utilities.DTOs.User
         [Required]
         public string LastName { get; set; }
 
-        [Required]
-        public string Gender { get; set; }
-
-        [Required]
-        public int Age { get; set; }
 
         [Required]
         public string Email { get; set; }
@@ -27,8 +22,9 @@ namespace HostelAPI.Utilities.DTOs.User
         [Required]
         public string  Password { get; set; }
 
-        public string PhoneNumber{ get; set; }
-        public string  UserName{ get; set; }
+       
+
+ 
 
     }
 }

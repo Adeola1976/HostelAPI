@@ -64,6 +64,7 @@ namespace HostelAPI.Core.Services.Implementation
             using var smtp = new MailKit.Net.Smtp.SmtpClient();
 
             smtp.Connect(_mailSettings.Host, _mailSettings.Port, SecureSocketOptions.StartTls);
+            
             smtp.Authenticate(_mailSettings.Mail, _mailSettings.Password);
             await smtp.SendAsync(email);
             smtp.Disconnect(true);

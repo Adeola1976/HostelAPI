@@ -10,7 +10,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace HostelAPI.Database.Migrations
 {
     [DbContext(typeof(HDBContext))]
-    [Migration("20211013200404_first")]
+    [Migration("20211017115726_first")]
     partial class first
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

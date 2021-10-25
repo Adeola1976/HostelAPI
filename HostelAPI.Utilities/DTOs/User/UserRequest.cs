@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+
 namespace HostelAPI.Utilities.DTOs.User
 {
    public  class UserRequest
@@ -14,6 +15,6 @@ namespace HostelAPI.Utilities.DTOs.User
 
         [Required]
         public string Password { get; set; }
-     
+
     }
 }

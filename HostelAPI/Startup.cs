@@ -3,11 +3,14 @@ using HostelAPI.Core.Repository.Implementation;
 using HostelAPI.Core.Services.Abstraction;
 using HostelAPI.Core.Services.Implementation;
 using HostelAPI.Database.Context;
+using HostelAPI.Database.Seeding;
 using HostelAPI.Extension;
 using HostelAPI.Model;
 using HostelAPI.Model.Mail;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -20,6 +23,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+
 
 namespace HostelAPI
 {
@@ -42,30 +46,25 @@ namespace HostelAPI
 
 
             //configure entityframeworkcore with PostgreSQL database connection
-            services.AddDbContext<HDBContext>(options =>
-                options.UseNpgsql(Configuration.GetConnectionString("default")));
+                 services.AddDbContext<HDBContext>(options =>
+                 options.UseNpgsql(Configuration.GetConnectionString("default")));
+                 services.AddMvc()
+                .AddSessionStateTempDataProvider();
+                 services.AddSession();
 
 
-            services.AddIdentity<AppUser, IdentityRole>()
-          .AddEntityFrameworkStores<HDBContext>()
-          .AddDefaultTokenProviders();
-            services.Configure<IdentityOptions>(options =>
-            {
-                options.User.RequireUniqueEmail = true;
-                options.Password.RequiredLength = 7;
 
 
-            });
 
-         
 
-          
+
 
             //Mail service being registered
 
             services.AddScoped<IMailService, MailService>();
             services.AddScoped<ITokenGenerator, TokenGenerator>();
             services.AddScoped<IAuthetication, Authetication>();
+          
             services.Configure<MailSettings>(Configuration.GetSection("MailSettings"));
          
             services.AddCors(c =>
@@ -76,10 +75,13 @@ namespace HostelAPI
        
             services.AddControllers();
             services.ConfigureAuthentication();
+            services.ConfigureIdentity();
             services.AddSwagger();
+            // Register Dependency Injection Service Extension
+            services.AddDependencyInjection();
         }
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, RoleManager<IdentityRole> roleManager, UserManager<AppUser> userManager, HDBContext  myContactContext)
         {
             if (env.IsDevelopment())
             {
@@ -87,6 +89,11 @@ namespace HostelAPI
                 app.UseSwagger();
                 app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "HostelAPI v1"));
             }
+
+            Seeder.Seed(roleManager, userManager, myContactContext).Wait();
+            app.UseSession();
+           
+
 
             app.UseStaticFiles();
 

@@ -12,16 +12,16 @@ namespace HostelAPI.Core.Repository.Abstraction
 {
     public interface IAuthetication
     {
-        Task<UserResponse> Register(RegRequest regRequest);
+        Task<RegisterationResponse> Register(RegRequest regRequest);
 
         Task<UserResponse> Login(UserRequest userRequest);
 
-        Task<UserResponse> ConfirmEmail(string UserId, string token);
+        Task<UserConfirmEmailDTO> ConfirmEmail(string UserId, string token);
 
-        Task<UserConfirmEmailDTO> ForgetPassword(string Id);
+        Task<UserConfirmEmailDTO> ForgetPassword(UserRequest userRequest);
 
         Task<ResetPasswordResponseDto> ResetPassword(ResetPasswordUserRequest userRequest);
-
+         
         Task<ResetPasswordResponseDto> ResponseForResetPassword(string Email, string token);
 
     }

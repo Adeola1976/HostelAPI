@@ -6,11 +6,20 @@ using System.Text;
 using System.Threading.Tasks;
 using HostelAPI.Model;
 using HostelAPI.Utilities.DTOs.User;
+using AutoMapper;
+using HostelAPI.Utilities.DTOs.Rooms;
 
 namespace HostelAPI.Utilities.DTOs.Mapping
 {
-    public class UserMapping
+    public class UserMapping : Profile
     {
+        public UserMapping()
+        {
+            CreateMap<RoomType, RoomTypeRequestDto>().ReverseMap();
+            CreateMap<RoomTypeResponseDto, RoomType>().ReverseMap();
+            CreateMap<Room, RoomRequestDto>().ReverseMap();
+            CreateMap<RoomResponseDto, Room>().ReverseMap();
+        }
         public static UserResponse GetUserResponse(AppUser user)
         {
             return new UserResponse()
@@ -21,7 +30,9 @@ namespace HostelAPI.Utilities.DTOs.Mapping
                 ImageUrl = user.ImageUrl,
                 ImagePublicId = user.ImagePublicId,
                 Email = user.Email,
-                PhoneNumber = user.PhoneNumber
+                IsActive = user.IsActive,
+              
+            
 
             };
         }
@@ -32,9 +43,8 @@ namespace HostelAPI.Utilities.DTOs.Mapping
               
                 LastName = regRequest.LastName,
                 FirstName = regRequest.FirstName,
-                UserName = regRequest.UserName,
                 Email = regRequest.Email,
-                PhoneNumber = regRequest.PhoneNumber
+             
              
 
 

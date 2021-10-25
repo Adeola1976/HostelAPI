@@ -23,7 +23,7 @@ namespace HostelAPI.Utilities.DTOs.User
         public string Password { get; set; }
 
         [Required]
-        [StringLength(50, MinimumLength = 50)]
+      //  [StringLength(50, MinimumLength = 50)]
         public string ComfirmPassword { get; set; }
     }
 }

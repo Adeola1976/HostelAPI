@@ -34,15 +34,19 @@ namespace HostelAPI.Core.Repository.Implementation
             _configuration = configuration;
         }
 
-        public async Task<UserResponse> Register(RegRequest regRequest)
+        public async Task<RegisterationResponse> Register(RegRequest regRequest)
         {
+
             string errors = String.Empty;
+            
             AppUser RegUserModel = UserMapping.GetUser(regRequest);
+            RegUserModel.UserName = regRequest.Email;
+            
             var result = await _UserManager.CreateAsync(RegUserModel, regRequest.Password);
 
 
 
-            if (result.Succeeded)
+            if (RegUserModel!=null)
             {
                 //  await _UserManager.AddToRoleAsync(RegUserModel, "Customer");
                 var emailToken = await _UserManager.GenerateEmailConfirmationTokenAsync(RegUserModel);
@@ -61,7 +65,11 @@ namespace HostelAPI.Core.Repository.Implementation
                 };
 
                 await _mailservice.SendEmailAsync(mailDto);
-                return UserMapping.GetUserResponse(RegUserModel);
+                return new RegisterationResponse()
+                {
+                    Message = $"`{RegUserModel.Email} was registered successfully`",
+                    IsSuccess = true
+                };
             }
 
 
@@ -74,10 +82,12 @@ namespace HostelAPI.Core.Repository.Implementation
         }
 
         public async Task<UserResponse> Login(UserRequest userRequest)
+
         {
             AppUser AUserModel = await _UserManager.FindByEmailAsync(userRequest.Email);
 
-            if (AUserModel != null)
+
+            if (AUserModel != null && AUserModel.EmailConfirmed != false)
             {
                 if (await _UserManager.CheckPasswordAsync(AUserModel, userRequest.Password))
                 {
@@ -94,15 +104,17 @@ namespace HostelAPI.Core.Repository.Implementation
                     response.Token = await _TokenGenerator.GenerateToken(AUserModel);
                     return response;
                 }
-                throw new AccessViolationException("Invalid Credentials");
+
+
+
+                throw new AccessViolationException("Invalid Password");
             }
 
             throw new AccessViolationException("Invalid Credentials");
         }
 
 
-
-        public async Task<UserResponse> ConfirmEmail(string UserId, string token)
+            public async Task<UserConfirmEmailDTO> ConfirmEmail(string UserId, string token)
         {
             if (string.IsNullOrWhiteSpace(UserId) || string.IsNullOrWhiteSpace(token))
                 throw new AccessViolationException("incorrect input");
@@ -119,31 +131,38 @@ namespace HostelAPI.Core.Repository.Implementation
 
                 if (CheckIfEmailIsValid.Succeeded)
                 {
-                    var response = UserMapping.GetUserResponse(user);
-                    response.Token = token;
-                    return response;
+                    
+                    return new UserConfirmEmailDTO()
+                    {
+                        Message = "Email Corfirmed successfully",
+                        IsSuccess = true
+                    };
 
                 }
 
             }
-            throw new AccessViolationException("Invalid Credentials");
+            return new UserConfirmEmailDTO()
+            {
+                Message = "Invalid Credentials or Token has  expired",
+            };
+
         }
 
-        public async Task<UserConfirmEmailDTO> ForgetPassword(string Email)
+        public async Task<UserConfirmEmailDTO> ForgetPassword(UserRequest userRequest)
         {
 
-            if (string.IsNullOrWhiteSpace(Email))
+            if (string.IsNullOrWhiteSpace(userRequest.Email))
                 throw new AccessViolationException("incorrect input");
 
 
-            AppUser AUserModel = await _UserManager.FindByEmailAsync(Email);
+            AppUser AUserModel = await _UserManager.FindByEmailAsync(userRequest.Email);
 
             if (AUserModel != null)
             {
                 var passwordToken = await _UserManager.GeneratePasswordResetTokenAsync(AUserModel);
                 var encodedPasswordToken = Encoding.UTF8.GetBytes(passwordToken);
                 var validPasswordToken = WebEncoders.Base64UrlEncode(encodedPasswordToken);
-                string url = $"{_configuration["AppUrl"]}/reset-password?Email={Email}&token={validPasswordToken}";
+                string url = $"{_configuration["AppUrl"]}/reset-password?Email={userRequest.Email}&token={validPasswordToken}";
                 var mailDto = new MailRequest
                 {
                     ToEmail = AUserModel.Email,
@@ -169,7 +188,7 @@ namespace HostelAPI.Core.Repository.Implementation
         {
             string errors = String.Empty;
 
-            if (string.IsNullOrWhiteSpace(userRequest.Email) || string.IsNullOrWhiteSpace(userRequest.Token) || userRequest.ComfirmPassword != userRequest.Password)
+            if (string.IsNullOrWhiteSpace(userRequest.Email) || string.IsNullOrWhiteSpace(userRequest.Token) || string.IsNullOrWhiteSpace (userRequest.Password))
                 throw new AccessViolationException("incorrect input");
 
             AppUser user = await _UserManager.FindByEmailAsync(userRequest.Email);
@@ -208,16 +227,18 @@ namespace HostelAPI.Core.Repository.Implementation
             {
                return  new ResetPasswordResponseDto()
                 {
-                    Token = token,
+                   
                     Email = Email,
                     IsSuccess = true,
-                    Message = "Response being sent"
+                    Message = "email confirmed"
                 };
             }
 
             throw new AccessViolationException("Invalid Credentials");
 
         }
+
+
     }
 
 }
